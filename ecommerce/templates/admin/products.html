@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Manage Products — ShopFlask{% endblock %}
+
+{% block content %}
+<div class="container" style="padding:30px 20px;">
+    <div style="display:flex; justify-content:space-between;
+                align-items:center; margin-bottom:24px;">
+        <h2 class="section-title" style="margin:0;">Manage Products</h2>
+        <a href="{{ url_for('admin.add_product') }}" class="btn btn-primary">
+            + Add Product
+        </a>
+    </div>
+
+    <div style="background:white; border-radius:10px; overflow:hidden;
+                box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead style="background:#1a1a2e; color:white;">
+                <tr>
+                    <th style="padding:14px 20px; text-align:left;">Product</th>
+                    <th style="padding:14px; text-align:center;">Category</th>
+                    <th style="padding:14px; text-align:center;">Price</th>
+                    <th style="padding:14px; text-align:center;">Stock</th>
+                    <th style="padding:14px; text-align:center;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:14px 20px; font-weight:500;">{{ p['name'] }}</td>
+                    <td style="padding:14px; text-align:center;
+                            color:#888; font-size:0.88rem;">
+                        {{ p['category'] }}
+                    </td>
+                    <td style="padding:14px; text-align:center; color:#e94560;
+                            font-weight:600;">
+                        ₹{{ "%.2f"|format(p['price']) }}
+                    </td>
+                    <td style="padding:14px; text-align:center;">
+                        <span style="color:{% if p['stock'] < 5 %}#e94560{% else %}#4caf50{% endif %};
+                                    font-weight:600;">
+                            {{ p['stock'] }}
+                        </span>
+                    </td>
+                    <td style="padding:14px; text-align:center;">
+                        <form method="POST"
+                            action="{{ url_for('admin.delete_product', product_id=p['id']) }}"
+                            onsubmit="return confirm('Delete this product?')">
+                            <button type="submit" class="btn"
+                                    style="background:#fee; color:#e94560;
+                                            padding:6px 14px; font-size:0.82rem;">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

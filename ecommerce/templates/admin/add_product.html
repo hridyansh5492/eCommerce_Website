@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Add Product — ShopFlask{% endblock %}
+
+{% block content %}
+<div class="container" style="padding:30px 20px; max-width:600px;">
+    <h2 class="section-title">Add New Product</h2>
+
+    <div style="background:white; border-radius:10px; padding:28px;
+                box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <form method="POST">
+            {% for field, placeholder, type in [
+                ('name',        'e.g. Wireless Headphones', 'text'),
+                ('price',       'e.g. 1999.00',             'number'),
+                ('stock',       'e.g. 50',                  'number'),
+                ('category',    'e.g. Electronics',         'text'),
+                ('image_url',   'https://... (optional)',    'text')
+            ] %}
+            <div class="form-group">
+                <label style="text-transform:capitalize;">{{ field.replace('_', ' ') }}</label>
+                <input type="{{ type }}" name="{{ field }}"
+                    placeholder="{{ placeholder }}"
+                    {% if field == 'price' %}step="0.01" min="0"{% endif %}
+                    {% if field == 'stock' %}min="0"{% endif %}
+                    {% if field != 'image_url' %}required{% endif %}>
+            </div>
+            {% endfor %}
+
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="description" rows="3"
+                        style="width:100%; padding:10px 14px;
+                                border:1px solid #ddd; border-radius:6px;
+                                font-size:0.95rem; resize:vertical;"
+                        placeholder="Product description..."></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width:100%;">
+                Add Product
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %} 

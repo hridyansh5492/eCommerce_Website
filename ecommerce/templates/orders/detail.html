@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Order #{{ order['id'] }} — ShopFlask{% endblock %}
+
+{% block content %}
+<div class="container" style="padding:30px 20px; max-width:750px;">
+
+    <!-- Order Header -->
+    <div style="background:white; border-radius:10px; padding:24px;
+                box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between;
+                    align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+                <h2 style="color:#1a1a2e;">Order #{{ order['id'] }}</h2>
+                <p style="color:#888; font-size:0.88rem;">
+                    Placed on {{ order['created_at'] }}
+                </p>
+            </div>
+            <span style="padding:6px 18px; border-radius:20px; font-weight:600;
+                        font-size:0.9rem; text-transform:uppercase;
+                        background:
+                            {% if order['status'] == 'delivered' %}#d4edda{% elif order['status'] == 'shipped' %}#d1ecf1{% elif order['status'] == 'cancelled' %}#f8d7da{% else %}#fff3cd{% endif %};
+                        color:
+                            {% if order['status'] == 'delivered' %}#155724{% elif order['status'] == 'shipped' %}#0c5460{% elif order['status'] == 'cancelled' %}#721c24{% else %}#856404{% endif %};">
+                {{ order['status'] }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Order Items -->
+    <div style="background:white; border-radius:10px; padding:24px;
+                box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:20px;">
+        <h3 style="margin-bottom:16px; color:#1a1a2e;">Items Ordered</h3>
+
+        {% for item in items %}
+        <div style="display:flex; justify-content:space-between;
+                    align-items:center; padding:12px 0;
+                    border-bottom:1px solid #eee; gap:12px;">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <img src="{{ item['image_url'] or '' }}"
+                    onerror="this.style.display='none'"
+                    style="width:52px; height:52px; object-fit:cover;
+                            border-radius:6px; background:#eee;">
+                <div>
+                    <p style="font-weight:600;">{{ item['name'] }}</p>
+                    <p style="color:#888; font-size:0.85rem;">
+                        Qty: {{ item['quantity'] }} ×
+                        ₹{{ "%.2f"|format(item['price']) }}
+                    </p>
+                </div>
+            </div>
+            <p style="font-weight:700; color:#e94560; white-space:nowrap;">
+                ₹{{ "%.2f"|format(item['price'] * item['quantity']) }}
+            </p>
+        </div>
+        {% endfor %}
+
+        <!-- Total -->
+        <div style="display:flex; justify-content:space-between;
+                    padding-top:16px; font-size:1.15rem; font-weight:700;">
+            <span>Total Paid</span>
+            <span style="color:#e94560;">
+                ₹{{ "%.2f"|format(order['total_price']) }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <a href="{{ url_for('orders.order_history') }}" class="btn btn-outline">
+        Back to My Orders
+    </a>
+
+</div>
+{% endblock %}

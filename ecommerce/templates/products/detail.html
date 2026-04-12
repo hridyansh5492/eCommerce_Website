@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}{{ product['name'] }} — ShopFlask{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Product Detail -->
+    <div class="product-detail">
+
+        <!-- Left: Image -->
+        <div>
+            <img src="{{ product['image_url'] or url_for('static', filename='images/placeholder.png') }}"
+                alt="{{ product['name'] }}">
+        </div>
+
+        <!-- Right: Info -->
+        <div>
+            <p style="color:#888; font-size:0.85rem; text-transform:uppercase;">
+                {{ product['category'] }}
+            </p>
+            <h1 class="detail-title">{{ product['name'] }}</h1>
+            <p class="detail-price">₹{{ "%.2f"|format(product['price']) }}</p>
+
+            {% if product['stock'] > 0 %}
+                <p class="detail-stock">In Stock ({{ product['stock'] }} available)</p>
+            {% else %}
+                <p style="color:#e94560;">Out of Stock</p>
+            {% endif %}
+
+            <p class="detail-desc">{{ product['description'] }}</p>
+
+            <!-- Add to Cart -->
+            {% if session.get('user_id') and product['stock'] > 0 %}
+                <form action="{{ url_for('cart.add_to_cart', product_id=product['id']) }}"
+                    method="POST">
+                    <input type="number" name="quantity" value="1" min="1"
+                            max="{{ product['stock'] }}" class="qty-input">
+                    <button type="submit" class="btn btn-primary">Add to Cart</button>
+                </form>
+            {% elif not session.get('user_id') %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline">
+                    Login to Add to Cart
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    {% if related %}
+        <h2 class="section-title">Related Products</h2>
+        <div class="product-grid">
+            {% for item in related %}
+                <div class="product-card">
+                    <img src="{{ item['image_url'] or url_for('static', filename='images/placeholder.png') }}"
+                        alt="{{ item['name'] }}">
+                    <div class="card-body">
+                        <p class="card-category">{{ item['category'] }}</p>
+                        <h3 class="card-title">{{ item['name'] }}</h3>
+                        <p class="card-price">₹{{ "%.2f"|format(item['price']) }}</p>
+                        <a href="{{ url_for('products.product_detail', product_id=item['id']) }}"
+                            class="btn btn-dark" style="width:100%; text-align:center;">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

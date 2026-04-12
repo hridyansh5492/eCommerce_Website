@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Track Order #{{ order['id'] }} — ShopFlask{% endblock %}
+
+{% block content %}
+<div class="container" style="padding:30px 20px; max-width:700px;">
+    <h2 class="section-title">Track Order #{{ order['id'] }}</h2>
+
+    {% if order['status'] == 'cancelled' %}
+        <div class="alert alert-danger">
+            This order has been cancelled.
+        </div>
+    {% else %}
+
+    <!-- Progress Bar -->
+    <div style="background:white; border-radius:12px; padding:36px;
+                box-shadow:0 2px 12px rgba(0,0,0,0.08); margin-bottom:24px;">
+
+        <div style="display:flex; justify-content:space-between;
+                    align-items:flex-start; position:relative;">
+
+            <!-- Connecting Line -->
+            <div style="position:absolute; top:20px; left:10%; right:10%;
+                        height:4px; background:#eee; z-index:0;"></div>
+            <div style="position:absolute; top:20px; left:10%;
+                        height:4px; background:#e94560; z-index:1;
+                        width:{{ (current_step / (statuses|length - 1)) * 80 }}%;">
+            </div>
+
+            <!-- Steps -->
+            {% for status in statuses %}
+            {% set step_index = loop.index0 %}
+            <div style="display:flex; flex-direction:column; align-items:center;
+                        flex:1; position:relative; z-index:2;">
+
+                <!-- Circle -->
+                <div style="width:40px; height:40px; border-radius:50%;
+                            display:flex; align-items:center; justify-content:center;
+                            font-size:1rem; font-weight:700; margin-bottom:10px;
+                            background:{% if step_index <= current_step %}#e94560{% else %}#eee {% endif %};
+                            color:{% if step_index <= current_step %}white{% else %}#aaa{% endif %};">
+                    {% if step_index < current_step %}
+                        ✓
+                    {% else %}
+                        {{ step_index + 1 }}
+                    {% endif %}
+                </div>
+
+                <!-- Label -->
+                <p style="font-size:0.82rem; text-align:center; text-transform:capitalize;
+                        font-weight:{% if step_index == current_step %}700{% else %}400{% endif %};
+                        color:{% if step_index == current_step %}#e94560{% elif step_index < current_step %}#333{% else %}#aaa{% endif %};">
+                    {{ status }}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% endif %}
+
+    <!-- Order Info -->
+    <div style="background:white; border-radius:10px; padding:24px;
+                box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <p><strong>Order ID:</strong> #{{ order['id'] }}</p>
+        <p style="margin-top:8px;">
+            <strong>Placed on:</strong> {{ order['created_at'] }}
+        </p>
+        <p style="margin-top:8px;">
+            <strong>Total:</strong>
+            <span style="color:#e94560; font-weight:700;">
+                ₹{{ "%.2f"|format(order['total_price']) }}
+            </span>
+        </p>
+
+        <div style="margin-top:20px; display:flex; gap:12px; flex-wrap:wrap;">
+            <a href="{{ url_for('orders.order_detail', order_id=order['id']) }}"
+                class="btn btn-dark">View Items</a>
+            <a href="{{ url_for('orders.order_history') }}"
+                class="btn btn-outline">My Orders</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

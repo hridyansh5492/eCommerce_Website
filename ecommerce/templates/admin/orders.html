@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}Manage Orders — ShopFlask{% endblock %}
+
+{% block content %}
+<div class="container" style="padding:30px 20px;">
+    <h2 class="section-title">Manage Orders</h2>
+
+    <!-- Filter by Status -->
+    <div class="filter-bar" style="margin-bottom:24px;">
+        {% for s in ['', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'] %}
+        <a href="{{ url_for('admin.all_orders', status=s) }}"
+            class="filter-btn {% if status == s %}active{% endif %}">
+            {{ s or 'All' }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <div style="background:white; border-radius:10px; overflow:hidden;
+                box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <table style="width:100%; border-collapse:collapse;">
+            <thead style="background:#1a1a2e; color:white;">
+                <tr>
+                    <th style="padding:14px 20px; text-align:left;">#</th>
+                    <th style="padding:14px; text-align:left;">Customer</th>
+                    <th style="padding:14px; text-align:center;">Date</th>
+                    <th style="padding:14px; text-align:center;">Amount</th>
+                    <th style="padding:14px; text-align:center;">Status</th>
+                    <th style="padding:14px; text-align:center;">Update</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for o in orders %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:14px 20px; font-weight:600;">#{{ o['id'] }}</td>
+                    <td style="padding:14px;">{{ o['username'] }}</td>
+                    <td style="padding:14px; text-align:center;
+                                color:#888; font-size:0.88rem;">
+                        {{ o['created_at'][:10] }}
+                    </td>
+                    <td style="padding:14px; text-align:center;
+                                color:#e94560; font-weight:600;">
+                        ₹{{ "%.2f"|format(o['total_price']) }}
+                    </td>
+                    <td style="padding:14px; text-align:center;">
+                        <span style="padding:3px 12px; border-radius:20px;
+                                font-size:0.78rem; font-weight:600;
+                                text-transform:uppercase;
+                                background:{% if o['status']=='delivered' %}#d4edda{% elif o['status']=='shipped' %}#d1ecf1{% elif o['status']=='cancelled' %}#f8d7da{% else %}#fff3cd{% endif %};
+                                color:{% if o['status']=='delivered' %}#155724{% elif o['status']=='shipped' %}#0c5460{% elif o['status']=='cancelled' %}#721c24{% else %}#856404{% endif %};">
+                            {{ o['status'] }}
+                        </span>
+                    </td>
+                    <td style="padding:14px; text-align:center;">
+                        <form method="POST"
+                            action="{{ url_for('admin.update_order_status', order_id=o['id']) }}"
+                            style="display:inline-flex; gap:6px; align-items:center;">
+                            <select name="status"
+                                    style="padding:6px 10px; border:1px solid #ddd;
+                                            border-radius:6px; font-size:0.85rem;">
+                                {% for s in ['pending','processing','shipped',
+                                            'delivered','cancelled'] %}
+                                    <option value="{{ s }}"
+                                        {% if o['status'] == s %}selected{% endif %}>
+                                        {{ s }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-dark"
+                                    style="padding:6px 14px; font-size:0.82rem;">
+                                Update
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Home — ShopFlask{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<section class="hero">
+    <div class="container">
+        <h1>Welcome to ShopFlask</h1>
+        <p>Discover great products at unbeatable prices.</p>
+        <a href="{{ url_for('products.list_products') }}" class="btn btn-primary">
+            Shop Now
+        </a>
+    </div>
+</section>
+
+<!-- Featured Products -->
+<div class="container">
+    <h2 class="section-title">Featured Products</h2>
+    <div class="product-grid">
+        {% for product in products %}
+            <div class="product-card">
+                <img src="{{ product['image_url'] or url_for('static', filename='images/placeholder.png') }}"
+                    alt="{{ product['name'] }}">
+                <div class="card-body">
+                    <p class="card-category">{{ product['category'] }}</p>
+                    <h3 class="card-title">{{ product['name'] }}</h3>
+                    <p class="card-price">₹{{ "%.2f"|format(product['price']) }}</p>
+                    <a href="{{ url_for('products.product_detail', product_id=product['id']) }}"
+                        class="btn btn-dark" style="width:100%; text-align:center;">
+                        View Details
+                    </a>
+                </div>
+            </div>
+        {% else %}
+            <p>No products available yet.</p>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

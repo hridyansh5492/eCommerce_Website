@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}My Orders — ShopFlask{% endblock %}
+
+{% block content %}
+<div class="container" style="padding:30px 20px;">
+    <h2 class="section-title">My Orders</h2>
+
+    {% if orders %}
+        <div style="display:flex; flex-direction:column; gap:16px;">
+        {% for order in orders %}
+            <div style="background:white; border-radius:10px; padding:20px 24px;
+                        box-shadow:0 2px 8px rgba(0,0,0,0.07);
+                        display:flex; justify-content:space-between;
+                        align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <p style="font-weight:600; font-size:1rem;">
+                        Order #{{ order['id'] }}
+                    </p>
+                    <p style="color:#888; font-size:0.85rem;">
+                        {{ order['created_at'] }}
+                    </p>
+                </div>
+                <div style="text-align:center;">
+                    <span style="
+                        padding:4px 14px; border-radius:20px; font-size:0.82rem;
+                        font-weight:600; text-transform:uppercase;
+                        background:
+                            {% if order['status'] == 'delivered' %}#d4edda{% elif order['status'] == 'shipped' %}#d1ecf1{% elif order['status'] == 'cancelled' %}#f8d7da{% else %}#fff3cd{% endif %};
+                        color:
+                            {% if order['status'] == 'delivered' %}#155724{% elif order['status'] == 'shipped' %}#0c5460{% elif order['status'] == 'cancelled' %}#721c24{% else %}#856404{% endif %};">
+                        {{ order['status'] }}
+                    </span>
+                </div>
+                <div style="font-weight:700; color:#e94560; font-size:1.1rem;">
+                    ₹{{ "%.2f"|format(order['total_price']) }}
+                </div>
+                <a href="{{ url_for('orders.order_detail', order_id=order['id']) }}"
+                    class="btn btn-dark" style="padding:8px 18px;">
+                    View Details
+                </a>
+                <a href="{{ url_for('orders.track_order', order_id=order['id']) }}"
+                    class="btn btn-outline" style="padding:8px 18px;">
+                    Track
+                </a>
+            </div>
+        {% endfor %}
+        </div>
+
+    {% else %}
+        <div style="text-align:center; padding:60px; background:white;
+                    border-radius:12px;">
+            <p style="color:#888; font-size:1.1rem; margin-bottom:20px;">
+                You haven't placed any orders yet.
+            </p>
+            <a href="{{ url_for('products.list_products') }}" class="btn btn-primary">
+                Start Shopping
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

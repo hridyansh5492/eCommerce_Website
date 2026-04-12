@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Checkout — ShopFlask{% endblock %}
+
+{% block content %}
+<div class="container" style="padding:30px 20px; max-width:700px;">
+    <h2 class="section-title">Checkout</h2>
+
+    <!-- Order Summary -->
+    <div style="background:white; border-radius:10px; padding:24px;
+                box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:24px;">
+        <h3 style="margin-bottom:16px; color:#1a1a2e;">Order Summary</h3>
+
+        {% for pid, item in cart.items() %}
+        <div style="display:flex; justify-content:space-between;
+                    padding:10px 0; border-bottom:1px solid #eee;">
+            <span>{{ item['name'] }}
+                <span style="color:#888; font-size:0.9rem;">
+                    x{{ item['quantity'] }}
+                </span>
+            </span>
+            <span style="font-weight:600;">
+                ₹{{ "%.2f"|format(item['price'] * item['quantity']) }}
+            </span>
+        </div>
+        {% endfor %}
+
+        <div style="display:flex; justify-content:space-between;
+                    padding-top:16px; font-size:1.2rem; font-weight:700;">
+            <span>Total</span>
+            <span style="color:#e94560;">₹{{ "%.2f"|format(total) }}</span>
+        </div>
+    </div>
+
+    <!-- Confirm Order Form -->
+    <div style="background:white; border-radius:10px; padding:24px;
+                box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <h3 style="margin-bottom:16px; color:#1a1a2e;">Confirm Order</h3>
+        <p style="color:#888; margin-bottom:20px; font-size:0.95rem;">
+            Logged in as: <strong>{{ session['username'] }}</strong>
+        </p>
+
+        <form method="POST">
+            <button type="submit" class="btn btn-primary"
+                    style="width:100%; font-size:1rem; padding:14px;">
+                Place Order
+            </button>
+        </form>
+
+        <a href="{{ url_for('cart.view_cart') }}"
+            style="display:block; text-align:center; margin-top:14px;
+                color:#888; font-size:0.9rem;">
+            Back to Cart
+        </a>
+    </div>
+</div>
+{% endblock %}
