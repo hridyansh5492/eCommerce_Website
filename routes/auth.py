@@ -4,7 +4,7 @@ from flask import (
     redirect, url_for, session, flash
 )
 from werkzeug.security import generate_password_hash, check_password_hash
-from ecommerce.database import get_db
+from database import get_db
 
 auth_bp = Blueprint('auth', __name__)
 

@@ -10,14 +10,14 @@ def create_app():
 
     os.makedirs(app.instance_path, exist_ok=True)
 
-    from ecommerce.database import init_app
+    from database import init_app
     init_app(app)
 
-    from ecommerce.routes.auth     import auth_bp
-    from ecommerce.routes.products import products_bp
-    from ecommerce.routes.cart     import cart_bp
-    from ecommerce.routes.orders   import orders_bp
-    from ecommerce.routes.admin    import admin_bp
+    from routes.auth     import auth_bp
+    from routes.products import products_bp
+    from routes.cart     import cart_bp
+    from routes.orders   import orders_bp
+    from routes.admin    import admin_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(products_bp)
@@ -27,7 +27,7 @@ def create_app():
 
     @app.route('/')
     def home():
-        from ecommerce.database import get_db
+        from database import get_db
         db       = get_db()
         products = db.execute(
             'SELECT * FROM products WHERE stock > 0 LIMIT 8'
@@ -36,7 +36,7 @@ def create_app():
 
     @app.cli.command('init-db')
     def init_db_command():
-        from ecommerce.database import init_db
+        from database import init_db
         init_db()
         print('Database initialized.')
 
@@ -44,7 +44,7 @@ def create_app():
 
 # Run render_setup before creating app (only in production)
 if os.environ.get('RENDER'):
-    from ecommerce.render_setup import setup
+    from render_setup import setup
     setup()
 
 app = create_app()

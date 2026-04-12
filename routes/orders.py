@@ -3,8 +3,8 @@ from flask import (
     Blueprint, render_template, request,
     redirect, url_for, session, flash
 )
-from ecommerce.database import get_db
-from ecommerce.decorators import login_required
+from database import get_db
+from decorators import login_required
 
 orders_bp = Blueprint('orders', __name__)
 

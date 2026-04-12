@@ -1,6 +1,6 @@
 # routes/products.py
 from flask import Blueprint, render_template, request
-from ecommerce.database import get_db
+from database import get_db
 
 products_bp = Blueprint('products', __name__)
 
