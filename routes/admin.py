@@ -33,7 +33,7 @@ def dashboard():
                 COUNT(*) as order_count,
                 SUM(total_price) as revenue
             FROM orders
-            WHERE created_at >= DATE('now', '-7 days')
+            WHERE created_at >= DATE('now','-7 days')
             AND status != 'cancelled'
             GROUP BY day ORDER BY day'''
     ).fetchall()
@@ -41,8 +41,9 @@ def dashboard():
     top_products = db.execute(
         '''SELECT p.name,
                 SUM(oi.quantity) as total_sold,
-                SUM(oi.quantity * oi.price) as revenue
-            FROM order_items oi JOIN products p ON p.id = oi.product_id
+                  SUM(oi.quantity * oi.price) as revenue
+            FROM order_items oi
+            JOIN products p ON p.id = oi.product_id
             GROUP BY oi.product_id
             ORDER BY total_sold DESC LIMIT 5'''
     ).fetchall()
@@ -50,15 +51,31 @@ def dashboard():
     category_sales = db.execute(
         '''SELECT p.category,
                   SUM(oi.quantity * oi.price) as revenue
-            FROM order_items oi JOIN products p ON p.id = oi.product_id
+            FROM order_items oi
+            JOIN products p ON p.id = oi.product_id
             GROUP BY p.category ORDER BY revenue DESC'''
     ).fetchall()
 
+    # Safe lists for Chart.js — never pass empty
+    sales_days    = [r['day']         for r in sales_data]    or ['No data']
+    sales_revenue = [r['revenue']     for r in sales_data]    or [0]
+    sales_orders  = [r['order_count'] for r in sales_data]    or [0]
+    cat_labels    = [r['category']    for r in category_sales] or ['No data']
+    cat_revenue   = [r['revenue']     for r in category_sales] or [0]
+
     return render_template('admin/dashboard.html',
-        total_users=total_users, total_orders=total_orders,
-        total_products=total_products, total_revenue=total_revenue,
-        recent_orders=recent_orders, sales_data=sales_data,
-        top_products=top_products, category_sales=category_sales)
+        total_users    = total_users,
+        total_orders   = total_orders,
+        total_products = total_products,
+        total_revenue  = total_revenue,
+        recent_orders  = recent_orders,
+        top_products   = top_products,
+        sales_days     = sales_days,
+        sales_revenue  = sales_revenue,
+        sales_orders   = sales_orders,
+        cat_labels     = cat_labels,
+        cat_revenue    = cat_revenue,
+    )
 
 
 # ─── ALL ORDERS ──────────────────────────────────────────
@@ -92,7 +109,7 @@ def update_order_status(order_id):
         flash('Invalid status.', 'danger')
         return redirect(url_for('admin.all_orders'))
     db = get_db()
-    db.execute('UPDATE orders SET status = ? WHERE id = ?', (new_status, order_id))
+    db.execute('UPDATE orders SET status=? WHERE id=?', (new_status, order_id))
     db.commit()
     flash(f'Order #{order_id} updated to "{new_status}".', 'success')
     return redirect(url_for('admin.all_orders'))
@@ -108,14 +125,12 @@ def manage_products():
 
     query  = 'SELECT * FROM products WHERE 1=1'
     params = []
-
     if search:
         query += ' AND name LIKE ?'
         params.append(f'%{search}%')
     if category:
         query += ' AND category = ?'
         params.append(category)
-
     query += ' ORDER BY created_at DESC'
 
     products   = db.execute(query, params).fetchall()
@@ -134,58 +149,69 @@ def manage_products():
 @admin_bp.route('/products/add', methods=['GET', 'POST'])
 @admin_required
 def add_product():
+    # Default empty form data
+    form = {
+        'name': '', 'description': '',
+        'price': '', 'stock': '',
+        'category': '', 'image_url': ''
+    }
+
     if request.method == 'POST':
-        name        = request.form.get('name', '').strip()
-        description = request.form.get('description', '').strip()
-        category    = request.form.get('category', '').strip()
-        image_url   = request.form.get('image_url', '').strip()
+        # Pull values from form
+        form['name']        = request.form.get('name', '').strip()
+        form['description'] = request.form.get('description', '').strip()
+        form['category']    = request.form.get('category', '').strip()
+        form['image_url']   = request.form.get('image_url', '').strip()
+        form['price']       = request.form.get('price', '').strip()
+        form['stock']       = request.form.get('stock', '').strip()
 
-        # Validate numeric fields safely
         error = None
-        price = None
-        stock = None
 
-        if not name:
+        if not form['name']:
             error = 'Product name is required.'
-        elif not category:
+        elif not form['category']:
             error = 'Category is required.'
+        elif not form['price']:
+            error = 'Price is required.'
+        elif not form['stock']:
+            error = 'Stock is required.'
         else:
             try:
-                price = float(request.form.get('price', ''))
+                price = float(form['price'])
                 if price < 0:
                     error = 'Price cannot be negative.'
             except ValueError:
-                error = 'Enter a valid price.'
+                error = 'Enter a valid price (e.g. 999.00).'
 
             if error is None:
                 try:
-                    stock = int(request.form.get('stock', ''))
+                    stock = int(form['stock'])
                     if stock < 0:
                         error = 'Stock cannot be negative.'
                 except ValueError:
-                    error = 'Enter a valid stock number.'
+                    error = 'Enter a valid whole number for stock.'
 
         if error:
             flash(error, 'danger')
-            # Re-render form with the data the user typed
-            return render_template('admin/add_product.html',
-                                    form_data=request.form)
+            return render_template('admin/add_product.html', form=form)
 
         db = get_db()
         db.execute(
             '''INSERT INTO products
                 (name, description, price, stock, category, image_url)
                 VALUES (?, ?, ?, ?, ?, ?)''',
-            (name, description, price, stock, category, image_url)
+            (form['name'], form['description'],
+            float(form['price']), int(form['stock']),
+            form['category'], form['image_url'])
         )
         db.commit()
-        flash(f'Product "{name}" added successfully!', 'success')
+        flash(f"Product \"{form['name']}\" added successfully!", 'success')
         return redirect(url_for('admin.manage_products'))
 
-    return render_template('admin/add_product.html', form_data={})
+    return render_template('admin/add_product.html', form=form)
 
 
-# ─── EDIT PRODUCT ─────────────────────────────────────────
+# ─── EDIT PRODUCT ────────────────────────────────────────
 @admin_bp.route('/products/<int:product_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def edit_product(product_id):
@@ -198,23 +224,37 @@ def edit_product(product_id):
         flash('Product not found.', 'danger')
         return redirect(url_for('admin.manage_products'))
 
+    # On GET — pre-fill form with existing product data
+    form = {
+        'name':        product['name'],
+        'description': product['description'] or '',
+        'price':       product['price'],
+        'stock':       product['stock'],
+        'category':    product['category'],
+        'image_url':   product['image_url'] or '',
+    }
+
     if request.method == 'POST':
-        name        = request.form.get('name', '').strip()
-        description = request.form.get('description', '').strip()
-        category    = request.form.get('category', '').strip()
-        image_url   = request.form.get('image_url', '').strip()
+        form['name']        = request.form.get('name', '').strip()
+        form['description'] = request.form.get('description', '').strip()
+        form['category']    = request.form.get('category', '').strip()
+        form['image_url']   = request.form.get('image_url', '').strip()
+        form['price']       = request.form.get('price', '').strip()
+        form['stock']       = request.form.get('stock', '').strip()
 
         error = None
-        price = None
-        stock = None
 
-        if not name:
+        if not form['name']:
             error = 'Product name is required.'
-        elif not category:
+        elif not form['category']:
             error = 'Category is required.'
+        elif not form['price']:
+            error = 'Price is required.'
+        elif not form['stock']:
+            error = 'Stock is required.'
         else:
             try:
-                price = float(request.form.get('price', ''))
+                price = float(form['price'])
                 if price < 0:
                     error = 'Price cannot be negative.'
             except ValueError:
@@ -222,45 +262,47 @@ def edit_product(product_id):
 
             if error is None:
                 try:
-                    stock = int(request.form.get('stock', ''))
+                    stock = int(form['stock'])
                     if stock < 0:
                         error = 'Stock cannot be negative.'
                 except ValueError:
-                    error = 'Enter a valid stock number.'
+                    error = 'Enter a valid whole number for stock.'
 
         if error:
             flash(error, 'danger')
             return render_template('admin/edit_product.html',
-                                    product=product,
-                                    form_data=request.form)
+                                    form=form, product=product)
 
         db.execute(
             '''UPDATE products
-                SET name=?, description=?, price=?, stock=?, category=?, image_url=?
+                SET name=?, description=?, price=?, stock=?,
+                category=?, image_url=?
                 WHERE id=?''',
-            (name, description, price, stock, category, image_url, product_id)
+            (form['name'], form['description'],
+            float(form['price']), int(form['stock']),
+            form['category'], form['image_url'],
+            product_id)
         )
         db.commit()
-        flash(f'Product "{name}" updated successfully!', 'success')
+        flash(f"Product \"{form['name']}\" updated!", 'success')
         return redirect(url_for('admin.manage_products'))
 
     return render_template('admin/edit_product.html',
-                            product=product,
-                            form_data=product)
+                            form=form, product=product)
 
 
 # ─── DELETE PRODUCT ──────────────────────────────────────
 @admin_bp.route('/products/<int:product_id>/delete', methods=['POST'])
 @admin_required
 def delete_product(product_id):
-    db = get_db()
+    db      = get_db()
     product = db.execute(
-        'SELECT name FROM products WHERE id = ?', (product_id,)
+        'SELECT name FROM products WHERE id=?', (product_id,)
     ).fetchone()
     if not product:
         flash('Product not found.', 'danger')
         return redirect(url_for('admin.manage_products'))
-    db.execute('DELETE FROM products WHERE id = ?', (product_id,))
+    db.execute('DELETE FROM products WHERE id=?', (product_id,))
     db.commit()
-    flash(f'Product "{product["name"]}" deleted.', 'info')
+    flash(f"Product \"{product['name']}\" deleted.", 'info')
     return redirect(url_for('admin.manage_products'))

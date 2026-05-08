@@ -2,44 +2,40 @@
 {% block title %}Add Product — ShopFlask{% endblock %}
 
 {% block content %}
-<div class="container" style="padding:30px 20px; max-width:780px;">
+<div class="container" style="padding:30px 20px; max-width:820px;">
 
-    <!-- Breadcrumb -->
     <p style="color:#888; font-size:0.88rem; margin-bottom:16px;">
-        <a href="{{ url_for('admin.dashboard') }}"
-            style="color:#888;">Admin</a> /
-        <a href="{{ url_for('admin.manage_products') }}"
-            style="color:#888;">Products</a> /
-        <span style="color:#1a1a2e;">Add New</span>
+        <a href="{{ url_for('admin.dashboard') }}" style="color:#888;">Admin</a> /
+        <a href="{{ url_for('admin.manage_products') }}" style="color:#888;">Products</a> /
+        <span style="color:#1a1a2e; font-weight:600;">Add New</span>
     </p>
 
     <h2 class="section-title">Add New Product</h2>
 
-    <div style="display:grid; grid-template-columns:1fr 320px;
+    <div style="display:grid; grid-template-columns:1fr 300px;
                 gap:24px; align-items:start;">
 
-        <!-- Left: Form -->
+        <!-- ── Form ── -->
         <div style="background:white; border-radius:12px; padding:28px;
                     box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
-            <form method="POST" id="productForm">
+            <form method="POST" action="{{ url_for('admin.add_product') }}">
 
                 <div class="form-group">
                     <label>Product Name <span style="color:#e94560;">*</span></label>
                     <input type="text" name="name" required
-                            value="{{ form_data.get('name', '') }}"
-                            placeholder="e.g. Wireless Headphones"
-                            style="width:100%;">
+                            value="{{ form.name }}"
+                            placeholder="e.g. Wireless Headphones">
                 </div>
 
                 <div class="form-group">
                     <label>Description</label>
-                    <textarea name="description" rows="4"
-                            placeholder="Write a short product description..."
+                    <textarea name="description" rows="3"
+                            placeholder="Short product description..."
                             style="width:100%; padding:10px 14px;
                                     border:1px solid #ddd; border-radius:6px;
                                     font-size:0.95rem; resize:vertical;
-                                    font-family:'Segoe UI', sans-serif;">{{ form_data.get('description', '') }}</textarea>
+                                    font-family:'Segoe UI',sans-serif;">{{ form.description }}</textarea>
                 </div>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
@@ -47,58 +43,44 @@
                         <label>Price (₹) <span style="color:#e94560;">*</span></label>
                         <input type="number" name="price" required
                                 step="0.01" min="0"
-                                value="{{ form_data.get('price', '') }}"
-                                placeholder="e.g. 1999.00"
-                                style="width:100%;">
+                                value="{{ form.price }}"
+                                placeholder="0.00">
                     </div>
                     <div class="form-group">
                         <label>Stock <span style="color:#e94560;">*</span></label>
                         <input type="number" name="stock" required
-                            min="0"
-                            value="{{ form_data.get('stock', '') }}"
-                            placeholder="e.g. 50"
-                            style="width:100%;">
+                                min="0" value="{{ form.stock }}"
+                                placeholder="0">
                     </div>
                 </div>
 
                 <div class="form-group">
                     <label>Category <span style="color:#e94560;">*</span></label>
                     <input type="text" name="category" required
-                            value="{{ form_data.get('category', '') }}"
-                            placeholder="e.g. Electronics, Books, Footwear"
-                            list="category-suggestions"
-                            style="width:100%;">
-                    <!-- Datalist gives autocomplete suggestions -->
-                    <datalist id="category-suggestions">
-                        {% set cats = ['Electronics', 'Footwear', 'Books',
-                                        'Home', 'Accessories', 'Sports',
-                                        'Clothing', 'Furniture'] %}
-                        {% for c in cats %}
+                            value="{{ form.category }}"
+                            placeholder="e.g. Electronics"
+                            list="cat-list">
+                    <datalist id="cat-list">
+                        {% for c in ['Electronics','Footwear','Books','Home',
+                                    'Accessories','Sports','Clothing','Furniture'] %}
                             <option value="{{ c }}">
                         {% endfor %}
                     </datalist>
-                    <small style="color:#aaa; font-size:0.8rem;">
-                        Type or pick from suggestions
-                    </small>
                 </div>
 
                 <div class="form-group">
-                    <label>Image URL</label>
-                    <input type="url" name="image_url" id="imageUrlInput"
-                            value="{{ form_data.get('image_url', '') }}"
-                            placeholder="https://example.com/image.jpg"
-                            oninput="previewImage(this.value)"
-                            style="width:100%;">
-                    <small style="color:#aaa; font-size:0.8rem;">
-                        Paste a direct image link — preview updates automatically
-                    </small>
+                    <label>Image URL <span style="color:#aaa;">(optional)</span></label>
+                    <input type="text" name="image_url" id="imgInput"
+                            value="{{ form.image_url }}"
+                            placeholder="https://..."
+                            oninput="livePreview()">
+                    <small style="color:#aaa;">Paste any image link — preview updates live</small>
                 </div>
 
-                <!-- Action Buttons -->
-                <div style="display:flex; gap:12px; margin-top:8px;">
+                <div style="display:flex; gap:12px; margin-top:16px;">
                     <button type="submit" class="btn btn-primary"
-                            style="flex:1; padding:13px;">
-                        + Add Product
+                            style="flex:1; padding:13px; font-size:1rem;">
+                        ✅ Add Product
                     </button>
                     <a href="{{ url_for('admin.manage_products') }}"
                         class="btn btn-outline" style="padding:13px 20px;">
@@ -109,79 +91,52 @@
             </form>
         </div>
 
-        <!-- Right: Live Preview Card -->
+        <!-- ── Live Preview ── -->
         <div style="position:sticky; top:90px;">
-            <p style="color:#888; font-size:0.85rem; margin-bottom:10px;
-                    text-align:center; text-transform:uppercase;
-                    letter-spacing:0.5px;">Live Preview</p>
+            <p style="text-align:center; color:#888; font-size:0.8rem;
+                        text-transform:uppercase; letter-spacing:1px;
+                        margin-bottom:10px;">Live Preview</p>
 
-            <div class="product-card" style="box-shadow:0 4px 16px rgba(0,0,0,0.12);">
-                <img id="previewImg"
-                    src="{{ form_data.get('image_url', '') or url_for('static', filename='images/placeholder.png') }}"
+            <div class="product-card">
+                <img id="prevImg"
+                    src="{{ form.image_url or url_for('static', filename='images/placeholder.png') }}"
                     onerror="this.src='{{ url_for('static', filename='images/placeholder.png') }}'"
-                    alt="Preview"
-                    style="width:100%; height:200px; object-fit:cover; background:#eee;">
+                    style="width:100%; height:190px; object-fit:cover; background:#eee;">
                 <div class="card-body">
-                    <p class="card-category" id="previewCategory">
-                        {{ form_data.get('category', 'Category') or 'Category' }}
+                    <p class="card-category" id="prevCat">
+                        {{ form.category or 'Category' }}
                     </p>
-                    <h3 class="card-title" id="previewName">
-                        {{ form_data.get('name', 'Product Name') or 'Product Name' }}
+                    <h3 class="card-title" id="prevName">
+                        {{ form.name or 'Product Name' }}
                     </h3>
-                    <p class="card-price" id="previewPrice">
-                        {% if form_data.get('price') %}
-                            ₹{{ form_data.get('price') }}
-                        {% else %}
-                            ₹0.00
-                        {% endif %}
+                    <p class="card-price" id="prevPrice">
+                        ₹{{ form.price or '0.00' }}
                     </p>
                     <div class="btn btn-dark"
-                        style="width:100%; text-align:center; opacity:0.5;">
+                        style="width:100%;text-align:center;opacity:.4;
+                                cursor:default;">
                         View Details
                     </div>
                 </div>
             </div>
-
-            <p style="color:#aaa; font-size:0.78rem; text-align:center;
-                    margin-top:12px;">
-                This is how it appears in the store
-            </p>
         </div>
-
     </div>
 </div>
 
 <script>
-// ── Live image preview ──
-function previewImage(url) {
-    const img = document.getElementById('previewImg');
-    if (url && url.startsWith('http')) {
-        img.src = url;
-        img.onerror = () => {
-            img.src = "{{ url_for('static', filename='images/placeholder.png') }}";
-        };
-    }
+function livePreview() {
+    const url = document.getElementById('imgInput').value.trim();
+    const img = document.getElementById('prevImg');
+    if (url) { img.src = url; }
 }
-
-// ── Live name / category / price preview ──
-const nameInput     = document.querySelector('input[name="name"]');
-const categoryInput = document.querySelector('input[name="category"]');
-const priceInput    = document.querySelector('input[name="price"]');
-
-nameInput.addEventListener('input', () => {
-    const v = nameInput.value.trim();
-    document.getElementById('previewName').textContent = v || 'Product Name';
-});
-
-categoryInput.addEventListener('input', () => {
-    const v = categoryInput.value.trim();
-    document.getElementById('previewCategory').textContent = v || 'Category';
-});
-
-priceInput.addEventListener('input', () => {
-    const v = parseFloat(priceInput.value);
-    document.getElementById('previewPrice').textContent =
-        isNaN(v) ? '₹0.00' : '₹' + v.toFixed(2);
+document.querySelector('[name=name]').addEventListener('input', e =>
+    document.getElementById('prevName').textContent = e.target.value || 'Product Name');
+document.querySelector('[name=category]').addEventListener('input', e =>
+    document.getElementById('prevCat').textContent = e.target.value || 'Category');
+document.querySelector('[name=price]').addEventListener('input', e => {
+    const v = parseFloat(e.target.value);
+    document.getElementById('prevPrice').textContent =
+        '₹' + (isNaN(v) ? '0.00' : v.toFixed(2));
 });
 </script>
 {% endblock %}

@@ -3,195 +3,253 @@
 
 {% block content %}
 <div class="container" style="padding:30px 20px;">
-    <h2 class="section-title">Admin Dashboard</h2>
 
-    <!-- Summary Cards -->
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-                gap:18px; margin-bottom:36px;">
+    <div style="display:flex; justify-content:space-between;
+                align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:4px;">
+        <h2 class="section-title" style="margin:0;">Admin Dashboard</h2>
+        <div style="display:flex; gap:10px;">
+            <a href="{{ url_for('admin.manage_products') }}"
+                class="btn btn-outline" style="padding:8px 18px; font-size:0.88rem;">
+                🛍 Products
+            </a>
+            <a href="{{ url_for('admin.all_orders') }}"
+                class="btn btn-dark" style="padding:8px 18px; font-size:0.88rem;">
+                📦 Orders
+            </a>
+        </div>
+    </div>
 
-        {% set cards = [
-            ('Total Revenue',  '₹' ~ "%.0f"|format(total_revenue), '#e94560'),
-            ('Total Orders',   total_orders,                         '#1a1a2e'),
-            ('Total Products', total_products,                       '#4caf50'),
-            ('Total Users',    total_users,                          '#2196f3')
+    <!-- ── Summary Cards ── -->
+    <div style="display:grid;
+                grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+                gap:16px; margin:24px 0 36px;">
+        {% for label, value, color in [
+            ('💰 Revenue',  '₹' ~ "%.0f"|format(total_revenue), '#e94560'),
+            ('📦 Orders',   total_orders,   '#1a1a2e'),
+            ('🛍 Products', total_products, '#4caf50'),
+            ('👤 Users',    total_users,    '#2196f3'),
         ] %}
-
-        {% for label, value, color in cards %}
-        <div style="background:white; border-radius:10px; padding:22px;
-                    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+        <div style="background:white; border-radius:10px; padding:20px 22px;
+                    box-shadow:0 2px 8px rgba(0,0,0,0.07);
                     border-top:4px solid {{ color }};">
-            <p style="color:#888; font-size:0.85rem; margin-bottom:8px;">
-                {{ label }}
-            </p>
-            <p style="font-size:1.8rem; font-weight:700; color:{{ color }};">
-                {{ value }}
-            </p>
+            <p style="color:#888; font-size:0.82rem; margin-bottom:8px;">{{ label }}</p>
+            <p style="font-size:1.9rem; font-weight:700; color:{{ color }};">{{ value }}</p>
         </div>
         {% endfor %}
     </div>
 
-    <!-- Charts Row -->
+    <!-- ── Charts ── -->
     <div style="display:grid; grid-template-columns:2fr 1fr;
-                gap:24px; margin-bottom:36px;">
+                gap:24px; margin-bottom:32px;">
 
-        <!-- Line Chart: Daily Sales -->
         <div style="background:white; border-radius:10px; padding:24px;
-                    box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-            <h3 style="margin-bottom:16px; color:#1a1a2e;">Sales — Last 7 Days</h3>
-            <canvas id="salesChart" height="120"></canvas>
+                    box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+            <h3 style="margin-bottom:16px; font-size:0.95rem; color:#1a1a2e;">
+                📈 Sales — Last 7 Days
+            </h3>
+            {% if sales_days[0] == 'No data' %}
+                <div style="height:180px; display:flex; align-items:center;
+                            justify-content:center; color:#bbb; font-size:0.9rem;">
+                    No orders yet — chart will appear after first sale
+                </div>
+            {% else %}
+                <canvas id="salesChart" height="130"></canvas>
+            {% endif %}
         </div>
 
-        <!-- Doughnut Chart: Category Revenue -->
         <div style="background:white; border-radius:10px; padding:24px;
-                    box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-            <h3 style="margin-bottom:16px; color:#1a1a2e;">Revenue by Category</h3>
-            <canvas id="categoryChart"></canvas>
+                    box-shadow:0 2px 8px rgba(0,0,0,0.07);">
+            <h3 style="margin-bottom:16px; font-size:0.95rem; color:#1a1a2e;">
+                🍩 Revenue by Category
+            </h3>
+            {% if cat_labels[0] == 'No data' %}
+                <div style="height:180px; display:flex; align-items:center;
+                            justify-content:center; color:#bbb; font-size:0.9rem;
+                            text-align:center;">
+                    No sales yet
+                </div>
+            {% else %}
+                <canvas id="catChart"></canvas>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Top Products Table -->
+    <!-- ── Top Products ── -->
     <div style="background:white; border-radius:10px; padding:24px;
-                box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:36px;">
-        <h3 style="margin-bottom:16px; color:#1a1a2e;">Top Selling Products</h3>
+                box-shadow:0 2px 8px rgba(0,0,0,0.07); margin-bottom:28px;">
+        <h3 style="margin-bottom:16px; font-size:0.95rem; color:#1a1a2e;">
+            🏆 Top Selling Products
+        </h3>
+        {% if top_products %}
         <table style="width:100%; border-collapse:collapse;">
             <thead>
-                <tr style="border-bottom:2px solid #eee;">
-                    <th style="text-align:left; padding:10px; color:#888;
-                                font-size:0.85rem;">Product</th>
-                    <th style="text-align:center; padding:10px; color:#888;
-                                font-size:0.85rem;">Units Sold</th>
-                    <th style="text-align:right; padding:10px; color:#888;
-                                font-size:0.85rem;">Revenue</th>
+                <tr style="border-bottom:2px solid #f0f0f0;">
+                    <th style="text-align:left; padding:8px 10px;
+                                color:#888; font-size:0.82rem; font-weight:600;">
+                        Product
+                    </th>
+                    <th style="text-align:center; padding:8px;
+                                color:#888; font-size:0.82rem; font-weight:600;">
+                        Units Sold
+                    </th>
+                    <th style="text-align:right; padding:8px 10px;
+                                color:#888; font-size:0.82rem; font-weight:600;">
+                        Revenue
+                    </th>
                 </tr>
             </thead>
             <tbody>
                 {% for p in top_products %}
-                <tr style="border-bottom:1px solid #f5f5f5;">
-                    <td style="padding:12px 10px; font-weight:500;">{{ p['name'] }}</td>
-                    <td style="padding:12px; text-align:center;">{{ p['total_sold'] }}</td>
-                    <td style="padding:12px; text-align:right; color:#e94560;
-                                font-weight:600;">
+                <tr style="border-bottom:1px solid #f9f9f9;">
+                    <td style="padding:10px; font-weight:500;">{{ p['name'] }}</td>
+                    <td style="padding:10px; text-align:center; color:#555;">
+                        {{ p['total_sold'] }}
+                    </td>
+                    <td style="padding:10px; text-align:right;
+                                color:#e94560; font-weight:600;">
                         ₹{{ "%.2f"|format(p['revenue']) }}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        {% else %}
+            <p style="color:#bbb; text-align:center; padding:30px 0;">
+                No sales data yet
+            </p>
+        {% endif %}
     </div>
 
-    <!-- Recent Orders -->
+    <!-- ── Recent Orders ── -->
     <div style="background:white; border-radius:10px; padding:24px;
-                box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+                box-shadow:0 2px 8px rgba(0,0,0,0.07);">
         <div style="display:flex; justify-content:space-between;
                     align-items:center; margin-bottom:16px;">
-            <h3 style="color:#1a1a2e;">Recent Orders</h3>
-            <a href="{{ url_for('admin.all_orders') }}" class="btn btn-outline"
-                style="padding:6px 16px; font-size:0.85rem;">View All</a>
+            <h3 style="font-size:0.95rem; color:#1a1a2e;">🕐 Recent Orders</h3>
+            <a href="{{ url_for('admin.all_orders') }}"
+                style="color:#e94560; font-size:0.85rem;">View all →</a>
         </div>
+
+        {% if recent_orders %}
         <table style="width:100%; border-collapse:collapse;">
             <thead>
-                <tr style="border-bottom:2px solid #eee;">
-                    <th style="text-align:left; padding:10px; color:#888;
-                                font-size:0.85rem;">Order #</th>
-                    <th style="text-align:left; padding:10px; color:#888;
-                                font-size:0.85rem;">Customer</th>
-                    <th style="text-align:center; padding:10px; color:#888;
-                                font-size:0.85rem;">Status</th>
-                    <th style="text-align:right; padding:10px; color:#888;
-                                font-size:0.85rem;">Amount</th>
+                <tr style="border-bottom:2px solid #f0f0f0;">
+                    {% for h in ['Order','Customer','Date','Status','Amount'] %}
+                    <th style="padding:8px 10px; color:#888; font-size:0.82rem;
+                                font-weight:600;
+                                text-align:{% if loop.last %}right{% elif loop.index==3 or loop.index==4 %}center{% else %}left{% endif %};">
+                        {{ h }}
+                    </th>
+                    {% endfor %}
                 </tr>
             </thead>
             <tbody>
                 {% for o in recent_orders %}
-                <tr style="border-bottom:1px solid #f5f5f5;">
-                    <td style="padding:12px 10px; font-weight:500;">#{{ o['id'] }}</td>
-                    <td style="padding:12px 10px;">{{ o['username'] }}</td>
-                    <td style="padding:12px; text-align:center;">
+                <tr style="border-bottom:1px solid #f9f9f9;">
+                    <td style="padding:11px 10px; font-weight:600;">
+                        #{{ o['id'] }}
+                    </td>
+                    <td style="padding:11px 10px;">{{ o['username'] }}</td>
+                    <td style="padding:11px; text-align:center;
+                                color:#888; font-size:0.85rem;">
+                        {{ o['created_at'][:10] }}
+                    </td>
+                    <td style="padding:11px; text-align:center;">
+                        {% set sc = {
+                            'delivered':'#d4edda','shipped':'#d1ecf1',
+                            'cancelled':'#f8d7da','processing':'#e8d5f5'
+                        } %}
+                        {% set tc = {
+                            'delivered':'#155724','shipped':'#0c5460',
+                            'cancelled':'#721c24','processing':'#5b1fa5'
+                        } %}
                         <span style="padding:3px 12px; border-radius:20px;
-                                font-size:0.78rem; font-weight:600;
-                                text-transform:uppercase;
-                                background:{% if o['status']=='delivered' %}#d4edda{% elif o['status']=='shipped' %}#d1ecf1{% elif o['status']=='cancelled' %}#f8d7da{% else %}#fff3cd{% endif %};
-                                color:{% if o['status']=='delivered' %}#155724{% elif o['status']=='shipped' %}#0c5460{% elif o['status']=='cancelled' %}#721c24{% else %}#856404{% endif %};">
+                                    font-size:0.78rem; font-weight:600;
+                                    background:{{ sc.get(o['status'],'#fff3cd') }};
+                                    color:{{ tc.get(o['status'],'#856404') }};">
                             {{ o['status'] }}
                         </span>
                     </td>
-                    <td style="padding:12px; text-align:right; color:#e94560;
-                                font-weight:600;">
+                    <td style="padding:11px 10px; text-align:right;
+                                color:#e94560; font-weight:600;">
                         ₹{{ "%.2f"|format(o['total_price']) }}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+        {% else %}
+            <p style="color:#bbb; text-align:center; padding:30px 0;">
+                No orders yet
+            </p>
+        {% endif %}
     </div>
 </div>
 
 <!-- Chart.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
-    // ── Daily Sales Line Chart ──
-    const salesLabels  = {{ sales_data | map(attribute='day')         | list | tojson }};
-    const salesRevenue = {{ sales_data | map(attribute='revenue')     | list | tojson }};
-    const salesOrders  = {{ sales_data | map(attribute='order_count') | list | tojson }};
+    const salesDays    = {{ sales_days    | tojson }};
+    const salesRev     = {{ sales_revenue | tojson }};
+    const salesOrders  = {{ sales_orders  | tojson }};
+    const catLabels    = {{ cat_labels    | tojson }};
+    const catRevenue   = {{ cat_revenue   | tojson }};
 
-    new Chart(document.getElementById('salesChart'), {
-        type: 'line',
-        data: {
-            labels: salesLabels,
-            datasets: [
-                {
-                    label: 'Revenue (₹)',
-                    data: salesRevenue,
-                    borderColor: '#e94560',
-                    backgroundColor: 'rgba(233,69,96,0.08)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4
-                },
-                {
-                    label: 'Orders',
-                    data: salesOrders,
-                    borderColor: '#1a1a2e',
-                    backgroundColor: 'rgba(26,26,46,0.06)',
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 4,
-                    yAxisID: 'y2'
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { position: 'top' } },
-            scales: {
-                y:  { beginAtZero: true, title: { display: true, text: 'Revenue (₹)' } },
-                y2: { beginAtZero: true, position: 'right',
-                        title: { display: true, text: 'Orders' },
-                        grid: { drawOnChartArea: false } }
-            }
-        }
-    });
-
-    // ── Category Doughnut Chart ──
-    const catLabels  = {{ category_sales | map(attribute='category') | list | tojson }};
-    const catRevenue = {{ category_sales | map(attribute='revenue')  | list | tojson }};
-
-    new Chart(document.getElementById('categoryChart'), {
-        type: 'doughnut',
-        data: {
-            labels: catLabels,
-            datasets: [{
-                data: catRevenue,
-                backgroundColor: [
-                    '#e94560','#1a1a2e','#4caf50',
-                    '#2196f3','#ff9800','#9c27b0'
+    if (document.getElementById('salesChart')) {
+        new Chart(document.getElementById('salesChart'), {
+            type: 'line',
+            data: {
+                labels: salesDays,
+                datasets: [
+                    {
+                        label: 'Revenue (₹)',
+                        data: salesRev,
+                        borderColor: '#e94560',
+                        backgroundColor: 'rgba(233,69,96,0.08)',
+                        fill: true, tension: 0.4, pointRadius: 4,
+                    },
+                    {
+                        label: 'Orders',
+                        data: salesOrders,
+                        borderColor: '#1a1a2e',
+                        backgroundColor: 'rgba(26,26,46,0.05)',
+                        fill: true, tension: 0.4, pointRadius: 4,
+                        yAxisID: 'y2',
+                    }
                 ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { position: 'bottom' } }
-        }
-    });
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    y:  { beginAtZero: true,
+                        title: { display: true, text: 'Revenue (₹)' } },
+                    y2: { beginAtZero: true, position: 'right',
+                            title: { display: true, text: 'Orders' },
+                            grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+    }
+
+    if (document.getElementById('catChart')) {
+        new Chart(document.getElementById('catChart'), {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    data: catRevenue,
+                    backgroundColor: [
+                        '#e94560','#1a1a2e','#4caf50',
+                        '#2196f3','#ff9800','#9c27b0'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
 </script>
 {% endblock %}
