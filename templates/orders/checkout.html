@@ -39,10 +39,10 @@
             Logged in as: <strong>{{ session['username'] }}</strong>
         </p>
 
-        <form method="POST">
+        <form action="{{ url_for('orders.payment') }}" method="POST">
             <button type="submit" class="btn btn-primary"
                     style="width:100%; font-size:1rem; padding:14px;">
-                Place Order
+                Proceed to Payment →
             </button>
         </form>
 

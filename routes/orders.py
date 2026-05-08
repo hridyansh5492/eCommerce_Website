@@ -49,8 +49,8 @@ def checkout():
         for pid, item in cart.items():
             db.execute(
                 '''INSERT INTO order_items
-                   (order_id, product_id, quantity, price)
-                   VALUES (?, ?, ?, ?)''',
+                    (order_id, product_id, quantity, price)
+                    VALUES (?, ?, ?, ?)''',
                 (order_id, int(pid), item['quantity'], item['price'])
             )
             # Reduce product stock
@@ -68,6 +68,77 @@ def checkout():
         return redirect(url_for('orders.order_detail', order_id=order_id))
 
     return render_template('orders/checkout.html', cart=cart, total=total)
+
+
+# ─── PAYMENT PAGE ────────────────────────────────────────
+@orders_bp.route('/payment', methods=['GET', 'POST'])
+@login_required
+def payment():
+    cart = session.get('cart', {})
+
+    if not cart:
+        flash('Your cart is empty.', 'warning')
+        return redirect(url_for('cart.view_cart'))
+
+    total = sum(item['price'] * item['quantity'] for item in cart.values())
+
+    if request.method == 'POST':
+        method = request.form.get('payment_method', 'card')
+
+        # ── Validate stock one more time ──
+        db = get_db()
+        for pid, item in cart.items():
+            product = db.execute(
+                'SELECT stock FROM products WHERE id=?', (pid,)
+            ).fetchone()
+            if not product or product['stock'] < item['quantity']:
+                flash(f"Sorry, '{item['name']}' is out of stock.", 'danger')
+                return redirect(url_for('cart.view_cart'))
+
+        # ── Create order ──
+        cursor = db.execute(
+            'INSERT INTO orders (user_id, total_price, status) VALUES (?,?,?)',
+            (session['user_id'], total, 'pending')
+        )
+        order_id = cursor.lastrowid
+
+        for pid, item in cart.items():
+            db.execute(
+                '''INSERT INTO order_items (order_id, product_id, quantity, price)
+                    VALUES (?,?,?,?)''',
+                (order_id, int(pid), item['quantity'], item['price'])
+            )
+            db.execute(
+                'UPDATE products SET stock = stock - ? WHERE id=?',
+                (item['quantity'], int(pid))
+            )
+
+        db.commit()
+        session.pop('cart', None)
+        session['last_order_id'] = order_id
+        session['payment_method'] = method
+
+        return redirect(url_for('orders.payment_success'))
+
+    return render_template('orders/payment.html', cart=cart, total=total)
+
+
+# ─── PAYMENT SUCCESS ─────────────────────────────────────
+@orders_bp.route('/payment/success')
+@login_required
+def payment_success():
+    order_id = session.pop('last_order_id', None)
+    method   = session.pop('payment_method', 'card')
+
+    if not order_id:
+        return redirect(url_for('orders.order_history'))
+
+    db    = get_db()
+    order = db.execute(
+        'SELECT * FROM orders WHERE id=?', (order_id,)
+    ).fetchone()
+
+    return render_template('orders/payment_success.html', order=order, method=method)
 
 
 # ─── ORDER HISTORY ───────────────────────────────────────
